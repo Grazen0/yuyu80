@@ -16,10 +16,10 @@ $(BUILD_DIR)/$(TARGET): $(SRCS)
 	$(ZASM) -o $@ -l $(BUILD_DIR)/$(LST) -uwy $^
 
 upload: $(BUILD_DIR)/$(TARGET)
-	$(EEPROM_PROGRAMMER) write $(EPFLAGS) $<
+	$(EEPROM_PROGRAMMER) $(EPFLAGS) 'unlock' 'write $<' 'lock'
 
 verify: $(BUILD_DIR)/$(TARGET)
-	$(EEPROM_PROGRAMMER) verify $(EPFLAGS) $<
+	$(EEPROM_PROGRAMMER) $(EPFLAGS) 'verify $<'
 
 clean:
 	rm -rf $(BUILD_DIR)
