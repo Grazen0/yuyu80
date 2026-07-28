@@ -21,7 +21,10 @@ upload: $(BUILD_DIR)/$(TARGET)
 verify: $(BUILD_DIR)/$(TARGET)
 	$(EEPROM_PROGRAMMER) $(EPFLAGS) 'verify $<'
 
+monitor:
+	screen $(TTY) 1200 -parenb cs8 -cstob $(SCREENFLAGS)
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: clean all upload verify
+.PHONY: clean all upload verify monitor
