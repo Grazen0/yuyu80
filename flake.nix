@@ -28,8 +28,13 @@
           ...
         }:
         {
-          devShells.default = pkgs.callPackage ./shell.nix {
-            eeprom-uploader = inputs'.eeprom-programmer.packages.default;
+          devShells.default = pkgs.mkShell {
+            packages = with pkgs; [
+              inputs'.eeprom-programmer.packages.default
+              screen
+              xxd
+              sjasmplus
+            ];
           };
         };
     };
