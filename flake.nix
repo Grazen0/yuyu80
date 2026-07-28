@@ -31,9 +31,9 @@
           devShells.default = pkgs.mkShell {
             packages = with pkgs; [
               inputs'.eeprom-programmer.packages.default
-              screen
-              xxd
               sjasmplus
+              tio
+              xxd
             ];
           };
         };
