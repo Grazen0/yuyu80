@@ -1,3 +1,5 @@
+    .include "serial.inc"
+
     .module serial
 
 ; ------------------------------------------------------------------------------
@@ -92,8 +94,94 @@ init:
     ;           ||+------ no auto enables
     ;           ++------- rx 8 bits per char
     out     (SIO_CTRL_A), a
+
+    ; init rx buffer
+    xor     a
+    ld      (serial_rx_tail), a
+    ld      (serial_rx_head), a
+
     ret
 
+; ------------------------------------------------------------------------------
+; Returns the number of available bytes to read from the serial input buffer.
+;
+; In:       -
+; Out:      a = # of available bytes to read
+; Destroys: b
+; ------------------------------------------------------------------------------
+available:
+    ld      a, (serial_rx_head)
+    ld      b, a
+    ld      a, (serial_rx_tail)
+    sub     b
+    and     serial_rx_buffer_len-1
+    ret
+
+; ------------------------------------------------------------------------------
+; Reads a byte from the serial input buffer.
+;
+; In:       -
+; Out:      a = byte read.
+; Destroys: hl
+; ------------------------------------------------------------------------------
+read:
+    ld      hl, serial_rx_buffer
+    ld      a, (serial_rx_head)
+    add     l
+    ld      l, a
+
+    sub     low(serial_rx_buffer)-1 ; -1 increments head
+    and     serial_rx_buffer_len-1
+    ld      (serial_rx_head), a
+
+    ld      a, (hl)
+    ret
+
+; ------------------------------------------------------------------------------
+; Waits for the transmit buffer to be empty.
+;
+; In:       -
+; Out:      -
+; Destroys: a
+; ------------------------------------------------------------------------------
+wait_tx_empty:
+    xor     a   ; Select RR0
+.loop:
+    out     (SIO_CTRL_A), a
+    in      a, (SIO_CTRL_A)
+    and     $04
+    jr      z, .loop
+    ret
+
+; ------------------------------------------------------------------------------
+; Prints a character via serial.
+;
+; In:       a = character to print
+; Out:      -
+; Destroys: TODO
+; ------------------------------------------------------------------------------
+print_char:
+    push    af
+    call    wait_tx_empty
+    pop     af
+    out     (SIO_DATA_A), a
+    ret
+
+; ------------------------------------------------------------------------------
+; Prints a null-terminated string via serial.
+;
+; In:       hl = pointer to the string to print
+; Out:      -
+; Destroys: TODO
+; ------------------------------------------------------------------------------
+print:
+    ld      a, (hl)
+    or      a
+    ret     z
+
+    call    print_char
+    inc     hl
+    jr      print
 
 @isr_sio_a_rx_char_available:
     push    bc
@@ -101,9 +189,26 @@ init:
     push    hl
     push    af
 
-    call    @lcd.reset_cursor
-    ld      hl, s_char_available
-    call    @lcd.print
+.rx_loop:
+    in      a, (SIO_DATA_A)
+    ld      c, a
+
+    ld      hl, serial_rx_buffer
+    ld      a, (serial_rx_tail)
+    add     l
+    ld      l, a
+
+    sub     low(serial_rx_buffer)-1 ; -1 increments tail
+    and     serial_rx_buffer_len-1
+    ld      (serial_rx_tail), a
+
+    ld      (hl), c
+
+    xor     a               ; Select RR0
+    out     (SIO_CTRL_A), a
+    in      a, (SIO_CTRL_A)
+    and     $01             ; bit 0 -> rx char available
+    jr      nz, .rx_loop
 
     pop     af
     pop     hl

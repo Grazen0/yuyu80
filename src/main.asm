@@ -1,8 +1,6 @@
     .include "system.inc"
     .include "macros.inc"
 
-    resb    counter, 2
-
     padorg $0000
 reset:
     di
@@ -41,13 +39,13 @@ init:
     ld      sp, RAM_END & $FFFF
 
     ; CTC interrupt vector
-    ld      a, low ctc_int_vec
+    ld      a, low(ctc_int_vec)
     out     (CTC_CH0), a
 
     ; SIO interrupt vector
     ld      a, $02              ; select WR2
     out     (SIO_CTRL_B), a
-    ld      a, low sio_int_vec  ; interrupt vector
+    ld      a, low(sio_int_vec) ; interrupt vector
     out     (SIO_CTRL_B), a
 
     call    @time.init
@@ -58,49 +56,33 @@ init:
     ld      a, %00001111        ; Output mode
     out     (PIO_CTRL_A), a
 
-    ld      a, %01011100
-    out     (PIO_DATA_A), a
-
-    ; init data
-    ld      hl, $0000
-    ld      (counter), hl
-
     ; init interrupts
     xor     a
     ld      i, a
     im      2
     ei
 
-.loop:
-    ; send something via SIO
-    ld      a, '*'
-    out     (SIO_DATA_A), a
-
-    call    print_counter
-
-    ld      hl, (counter)
-    inc     hl
-    ld      (counter), hl
-
-    in      a, (PIO_DATA_A)
-    cpl                         ; a = ~a
+    xor     a
     out     (PIO_DATA_A), a
 
-    ld      hl, 1000
-    call    @time.delay
-
-    jr      .loop
-
-print_counter:
-    call    @lcd.reset_cursor
-
-    ld      hl, s_count
+    ld      hl, s_hello
     call    @lcd.print
 
-    ld      hl, (counter)
-    call    @lcd.print_num
+.loop:
+    call    @serial.available
+    or      a
+    jr      z, .skip_read_loop
+    ld      b, a
+.read_loop:
+    call    @serial.read
+    call    @serial.print_char
+    djnz    .read_loop
+.skip_read_loop:
 
-    jp      @lcd.clear_to_eol
+    ; ld      hl, 500
+    ; call    @time.delay
+
+    jr      .loop
 
     .include "math.asm"
     .include "conv.asm"
@@ -108,4 +90,5 @@ print_counter:
     .include "time.asm"
     .include "serial.asm"
 
-s_count: .byte "Count: ", 0
+s_hello: .byte "Hello, world!", 0
+s_available: .byte "Available: ", 0
