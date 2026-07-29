@@ -14,7 +14,7 @@ bauds = [
     115200,
 ]
 
-# TODO: find out why multiplier of 1 doesnt work
+# multiplier of 1 does not work in asynchronous mode
 multipliers = [16, 32, 64]
 
 
