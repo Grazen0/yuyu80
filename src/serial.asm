@@ -145,12 +145,9 @@ read:
 ; Destroys: a
 ; ------------------------------------------------------------------------------
 wait_tx_empty:
-    xor     a   ; Select RR0
-.loop:
-    out     (SIO_CTRL_A), a
-    in      a, (SIO_CTRL_A)
+    in      a, (SIO_CTRL_A)     ; Read RR0
     and     $04
-    jr      z, .loop
+    jr      z, wait_tx_empty
     ret
 
 ; ------------------------------------------------------------------------------
@@ -204,9 +201,7 @@ print:
 
     ld      (hl), c
 
-    xor     a               ; Select RR0
-    out     (SIO_CTRL_A), a
-    in      a, (SIO_CTRL_A)
+    in      a, (SIO_CTRL_A) ; Read RR0
     and     $01             ; bit 0 -> rx char available
     jr      nz, .rx_loop
 

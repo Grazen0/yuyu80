@@ -134,20 +134,38 @@ print:
 ; ------------------------------------------------------------------------------
 ; Prints a byte in hex format to the LCD.
 ;
-; In:       a = byte to print
+; In:       c = byte to print
 ; Out:      -
 ; Destroys: a
 ; ------------------------------------------------------------------------------
 print_hex:
-    push    af
+    ld      a, c
     .4      srl     a
     call    @conv.digit_to_hex
     call    print_char
-    pop     af
 
+    ld      a, c
     and     $0F
     call    @conv.digit_to_hex
+    jp      print_char
+
+; ------------------------------------------------------------------------------
+; Prints a byte in binary format to the LCD.
+;
+; In:       d = byte to print
+; Out:      -
+; Destroys: a, b
+; ------------------------------------------------------------------------------
+print_bin:
+    ld      b, 8
+.loop:
+    rlc     d
+    ld      a, '0'
+    adc     0
+    ld      c, a
     call    print_char
+
+    djnz    .loop
     ret
 
 

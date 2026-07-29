@@ -6,7 +6,6 @@ reset:
     di
     jp      init
 
-
     padorg $0008
 ctc_int_vec:
     isr_slot isr_ctc_ch0
@@ -38,6 +37,11 @@ isr_nop:
 init:
     ld      sp, RAM_END & $FFFF
 
+    call    @i2c.init
+    call    @time.init
+    call    @lcd.init
+    call    @serial.init
+
     ; CTC interrupt vector
     ld      a, low(ctc_int_vec)
     out     (CTC_CH0), a
@@ -48,25 +52,14 @@ init:
     ld      a, low(sio_int_vec) ; interrupt vector
     out     (SIO_CTRL_B), a
 
-    call    @time.init
-    call    @lcd.init
-    call    @serial.init
-
-    ; init pio
-    ld      a, %00001111        ; Output mode
-    out     (PIO_CTRL_A), a
-
     ; init interrupts
     xor     a
     ld      i, a
     im      2
     ei
 
-    xor     a
-    out     (PIO_DATA_A), a
-
-    ld      hl, s_hello
-    call    @lcd.print
+    ld      hl, s_banner
+    call    @serial.print
 
 .loop:
     call    @serial.available
@@ -79,8 +72,18 @@ init:
     djnz    .read_loop
 .skip_read_loop:
 
-    ; ld      hl, 500
-    ; call    @time.delay
+    call    @lcd.reset_cursor
+    call    @joypad.read
+    bit     0, d
+    jr      nz, .no_ack
+
+    ld      d, a
+    call    @lcd.print_bin
+    jr      .read_end
+.no_ack:
+    ld      hl, s_no_ack
+    call    @lcd.print
+.read_end:
 
     jr      .loop
 
@@ -89,6 +92,18 @@ init:
     .include "lcd.asm"
     .include "time.asm"
     .include "serial.asm"
+    .include "i2c.asm"
+    .include "joypad.asm"
 
+s_banner:
+    .byte " _   _      _ _                             _     _ _ \r\n"
+    .byte "| | | | ___| | | ___    __      _____  _ __| | __| | |\r\n"
+    .byte "| |_| |/ _ \\ | |/ _ \\   \\ \\ /\\ / / _ \\| '__| |/ _` | |\r\n"
+    .byte "|  _  |  __/ | | (_) |   \\ V  V / (_) | |  | | (_| |_|\r\n"
+    .byte "|_| |_|\\___|_|_|\\___( )   \\_/\\_/ \\___/|_|  |_|\\__,_(_)\r\n"
+    .byte "                    |/                                \r\n"
+    .byte "Type something to see it back.\r\n", 0
+
+s_no_ack: .byte "No ACK", 0
 s_hello: .byte "Hello, world!", 0
 s_available: .byte "Available: ", 0
