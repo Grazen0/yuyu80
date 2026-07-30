@@ -86,14 +86,13 @@ init:
 ; ------------------------------------------------------------------------------
 ; Prints a character to the LCD.
 ;
-; In:       a = character to print
+; In:       c = character to print
 ; Out:      -
-; Destroys: -
+; Destroys: a
 ; ------------------------------------------------------------------------------
 print_char:
-    push    af
     call    busy_wait
-    pop     af
+    ld      a, c
     out     (LCD_DATA), a
     ret
 
@@ -102,11 +101,11 @@ print_char:
 ;
 ; In:       -
 ; Out:      -
-; Destroys: a, b
+; Destroys: bc
 ; ------------------------------------------------------------------------------
 clear_to_eol:
     ld      b, 16
-    ld      a, ' '
+    ld      c, ' '
 
 .loop
     call    print_char
@@ -120,13 +119,14 @@ clear_to_eol:
 ;
 ; In:       hl = pointer to the string to print
 ; Out:      -
-; Destroys: a, hl
+; Destroys: a, c, hl
 ; ------------------------------------------------------------------------------
 print:
     ld      a, (hl)
     or      a
     ret     z
 
+    ld      c, a
     call    print_char
     inc     hl
     jr      print
@@ -134,19 +134,21 @@ print:
 ; ------------------------------------------------------------------------------
 ; Prints a byte in hex format to the LCD.
 ;
-; In:       c = byte to print
+; In:       d = byte to print
 ; Out:      -
-; Destroys: a
+; Destroys: a, c
 ; ------------------------------------------------------------------------------
 print_hex:
-    ld      a, c
+    ld      a, d
     .4      srl     a
     call    @conv.digit_to_hex
+    ld      c, a
     call    print_char
 
-    ld      a, c
+    ld      a, d
     and     $0F
     call    @conv.digit_to_hex
+    ld      c, a
     jp      print_char
 
 ; ------------------------------------------------------------------------------
@@ -154,7 +156,7 @@ print_hex:
 ;
 ; In:       d = byte to print
 ; Out:      -
-; Destroys: a, b
+; Destroys: a, bc
 ; ------------------------------------------------------------------------------
 print_bin:
     ld      b, 8

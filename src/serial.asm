@@ -2,6 +2,36 @@
 
     .module serial
 
+rts_off:
+    ld      a, $05          ; Select WR5
+    out     (SIO_CTRL_A), a
+    ld      a, %11101000
+    ;           ||||||||
+    ;           |||||||+- tx crc enable = 0
+    ;           ||||||+-- rts = 0
+    ;           |||||+--- tx sdlc/crc-16 = 0
+    ;           ||||+---- tx enable = 1
+    ;           |||+----- send break = 0
+    ;           |++------ bits per char = 11 (8)
+    ;           +-------- dtr = 1
+    out     (SIO_CTRL_A), a
+    ret
+
+rts_on:
+    ld      a, $05          ; Select WR5
+    out     (SIO_CTRL_A), a
+    ld      a, %11101010
+    ;           ||||||||
+    ;           |||||||+- tx crc enable = 0
+    ;           ||||||+-- rts = 1
+    ;           |||||+--- tx sdlc/crc-16 = 0
+    ;           ||||+---- tx enable = 1
+    ;           |||+----- send break = 0
+    ;           |++------ bits per char = 11 (8)
+    ;           +-------- dtr = 1
+    out     (SIO_CTRL_A), a
+    ret
+
 ; ------------------------------------------------------------------------------
 ; Initializes the serial module. Must be called before any other serial
 ; subroutines.
@@ -14,14 +44,14 @@ init:
     ; CTC channel 1 produces the clock for the SIO
     ld      a, %00000111
     ;           ||||||||
-    ;           |||||||+- is control word
-    ;           ||||||+-- reset
-    ;           |||||+--- time constant follows
+    ;           |||||||+- is control word = 1
+    ;           ||||||+-- reset = 1
+    ;           |||||+--- time constant follows = 1
     ;           ||||+---- automatic timer trigger
-    ;           |||+----- clk/trg reacts to falling edge
-    ;           ||+------ prescaler value 16
-    ;           |+------- timer mode
-    ;           +-------- disable interrupts
+    ;           |||+----- clk/trg edge = 1 (falling edge)
+    ;           ||+------ prescaler value = 1 (x16)
+    ;           |+------- timer mode = 0
+    ;           +-------- enable interrupts = 0
     out     (CTC_CH1), a
     ld      a, SIO_TIME_CONST
     out     (CTC_CH1), a
@@ -153,14 +183,13 @@ wait_tx_empty:
 ; ------------------------------------------------------------------------------
 ; Prints a character via serial.
 ;
-; In:       a = character to print
+; In:       c = character to print
 ; Out:      -
-; Destroys: TODO
+; Destroys: a
 ; ------------------------------------------------------------------------------
 print_char:
-    push    af
     call    wait_tx_empty
-    pop     af
+    ld      a, c
     out     (SIO_DATA_A), a
     ret
 
@@ -169,20 +198,20 @@ print_char:
 ;
 ; In:       hl = pointer to the string to print
 ; Out:      -
-; Destroys: TODO
+; Destroys: a, c, hl
 ; ------------------------------------------------------------------------------
 print:
     ld      a, (hl)
     or      a
     ret     z
 
+    ld      c, a
     call    print_char
     inc     hl
     jr      print
 
 @isr_sio_a_rx_char_available:
     push    bc
-    push    de
     push    hl
     push    af
 
@@ -207,7 +236,6 @@ print:
 
     pop     af
     pop     hl
-    pop     de
     pop     bc
     ei
     reti

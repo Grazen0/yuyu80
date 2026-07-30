@@ -1,6 +1,8 @@
     .include "system.inc"
     .include "macros.inc"
 
+    resb    joyp, 1
+
     padorg $0000
 reset:
     di
@@ -68,17 +70,23 @@ init:
     ld      b, a
 .read_loop:
     call    @serial.read
+    ld      c, a
+    call    @lcd.print_char
     call    @serial.print_char
     djnz    .read_loop
 .skip_read_loop:
 
-    call    @lcd.reset_cursor
     call    @joypad.read
     bit     0, d
     jr      nz, .no_ack
 
     ld      d, a
-    call    @lcd.print_bin
+    bit     7, d
+    call    nz, @serial.rts_off
+    bit     6, d
+    call    nz, @serial.rts_on
+
+    ; call    @lcd.print_bin
     jr      .read_end
 .no_ack:
     ld      hl, s_no_ack
