@@ -31,11 +31,12 @@ init:
     ret
 
 @isr_ctc_ch0:
-    push    bc
-    ld      bc, (timer)
-    inc     bc
-    ld      (timer), bc
-    pop     bc
+    ; exx is reserved for this isr to save time due to its frequency
+    exx
+    ld      hl, (timer)
+    inc     hl
+    ld      (timer), hl
+    exx
     ei
     reti
 
