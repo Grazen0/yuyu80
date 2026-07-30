@@ -8,6 +8,7 @@ bauds = [
     2400,
     4800,
     9600,
+    15625,  # made it the fuck up
     19200,
     38400,
     57600,
@@ -54,5 +55,5 @@ combs.sort(key=Combination.error)
 
 for comb in combs:
     print(
-        f"b = {comb.b:6}, m = {comb.m:2} -> c = {comb.c:3}, err = {round(100 * comb.error(), 2):5}%"
+        f"b = {comb.b:6}, m = {comb.m:2} -> c = {comb.c:3}, b' = {round(1 / (phi * 16 * comb.c* comb.m)):5}, err = {round(100 * comb.error(), 2):5}%"
     )

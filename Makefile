@@ -33,7 +33,7 @@ verify: $(BUILD_DIR)/$(TARGET)
 	$(EEPROM_PROGRAMMER) $(EPFLAGS) 'verify $<'
 
 monitor:
-	$(TIO) $(TIO_FLAGS) -b 1200 $(TTY)
+	$(TIO) $(TIO_FLAGS) -b 15625 $(TTY)
 
 clean:
 	rm -rf $(BUILD_DIR)
