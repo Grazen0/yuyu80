@@ -36,14 +36,25 @@ send_instr:
 
 
 ; ------------------------------------------------------------------------------
-; Resets the LCD's cursor position to the beginning.
+; Positions the LCD's cursor at the beginning of the first line.
 ;
 ; In:       -
 ; Out:      -
 ; Destroys: a
 ; ------------------------------------------------------------------------------
-reset_cursor:
+move_cursor_line_1:
     ld      a, INSTR_SET_DDRAM | $00
+    jp      send_instr
+
+; ------------------------------------------------------------------------------
+; Positions the LCD's cursor at the beginning of the second line.
+;
+; In:       -
+; Out:      -
+; Destroys: a
+; ------------------------------------------------------------------------------
+move_cursor_line_2:
+    ld      a, INSTR_SET_DDRAM | $40
     jp      send_instr
 
 ; ------------------------------------------------------------------------------
@@ -81,7 +92,7 @@ init:
     ld      a, %00000001    ; clear display
     call    send_instr
 
-    jp      reset_cursor
+    jp      move_cursor_line_1
 
 ; ------------------------------------------------------------------------------
 ; Prints a character to the LCD.
@@ -179,7 +190,7 @@ print_bin:
 ; Destroys: a, bc, de, hl
 ; ------------------------------------------------------------------------------
 print_num:
-    ld      bc, num_str_buf
+    ld      bc, lcd_num_str_buf
     call    @conv.num_to_str
     jp      print
 

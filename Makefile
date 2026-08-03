@@ -7,7 +7,9 @@ SYM := $(NAME).sym
 BUILD_DIR := ./build
 
 SRC_DIRS = ./src
-INC_DIRS = ./src
+
+INC_DIRS = $(shell find $(SRC_DIRS) -type d)
+INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 SRCS := $(shell find $(SRC_DIRS) -name '*.asm')
 INC_SRCS = $(shell find $(INC_DIRS) -name '*.inc')
@@ -18,7 +20,7 @@ SJASM := sjasmplus
 EEPROM_PROGRAMMER := eeprom-programmer
 TIO := tio
 
-SJASM_FLAGS := -Wall
+SJASM_FLAGS := $(INC_FLAGS) -Wall
 
 all: $(BUILD_DIR)/$(TARGET)
 

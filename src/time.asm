@@ -11,39 +11,61 @@
 ; Destroys: a
 ; ------------------------------------------------------------------------------
 init:
-    ; Channel 0 is set to trigger an interrupt every ms
-    ld      a, %10000111
+    ; Channel 3 is set to trigger an interrupt @ ~100Hz
+    ld      a, %10100111
     ;           ||||||||
     ;           |||||||+- is control word
     ;           ||||||+-- reset
     ;           |||||+--- time constant follows
     ;           ||||+---- automatic timer trigger
     ;           |||+----- clk/trg reacts to falling edge
-    ;           ||+------ prescaler value 16
+    ;           ||+------ prescaler value 256
     ;           |+------- timer mode
     ;           +-------- enable interrupts
-    out     (CTC_CH0), a
+    out     (CTC_CH3), a
     ld      a, TIMER_TIME_CONST
-    out     (CTC_CH0), a
+    out     (CTC_CH3), a
 
-    ; we don't care what value time is initialized to
+    ; hl' will always be `timer` so that we can use it
+    ; immediately in the isr
+    exx
+    ld      hl, timer
+    exx
+
+    ; also, we don't care what value `timer` is initialized to
 
     ret
 
-@isr_ctc_ch0:
-    ; exx is reserved for this isr to save time due to its frequency
+@isr_ctc_ch3:
+    ex      af, af'
     exx
-    ld      hl, (timer)
-    inc     hl
-    ld      (timer), hl
+    inc     (hl)
     exx
+    ex      af, af'
     ei
     reti
 
 ; ------------------------------------------------------------------------------
-; Waits for the given time (in milliseconds).
+; Waits for the next time tick.
 ;
-; In:       hl = time in milliseconds
+; In:       -
+; Out:      -
+; Destroys: a, hl
+; ------------------------------------------------------------------------------
+wait_tick:
+    ld      hl, timer
+    ld      a, (hl)
+.loop:
+    halt
+    cp      (hl)
+    jr      z, .loop
+    ret
+
+
+; ------------------------------------------------------------------------------
+; Waits for the given time (in ticks).
+;
+; In:       hl = time in ticks
 ; Out:      -
 ; Destroys: bc, de, hl
 ; ------------------------------------------------------------------------------
@@ -52,6 +74,7 @@ delay:
     ex      de, hl      ; de: ms
 
 .loop
+    halt
     ld      hl, (timer)
     or      a        ; clear carry flag
     sbc     hl, bc

@@ -41,7 +41,7 @@ rts_on:
 ; Destroys: a
 ; ------------------------------------------------------------------------------
 init:
-    ; CTC channel 1 produces the clock for the SIO
+    ; CTC channel 0 produces the clock for the SIO
     ld      a, %00000111
     ;           ||||||||
     ;           |||||||+- is control word = 1
@@ -52,9 +52,9 @@ init:
     ;           ||+------ prescaler value = 1 (x16)
     ;           |+------- timer mode = 0
     ;           +-------- enable interrupts = 0
-    out     (CTC_CH1), a
+    out     (CTC_CH0), a
     ld      a, SIO_TIME_CONST
-    out     (CTC_CH1), a
+    out     (CTC_CH0), a
 
     ; SIO channel A
     ld      a, $30              ; select WR0, error reset
@@ -210,6 +210,38 @@ print:
     inc     hl
     jr      print
 
+; ------------------------------------------------------------------------------
+; Prints a 16-bit unsigned number via serial.
+;
+; In:       hl = number to print
+; Out:      -
+; Destroys: a, bc, de, hl
+; ------------------------------------------------------------------------------
+print_num:
+    ld      bc, serial_num_str_buf
+    call    @conv.num_to_str
+    jp      print
+
+; ------------------------------------------------------------------------------
+; Prints a byte in hex format via serial.
+;
+; In:       d = byte to print
+; Out:      -
+; Destroys: a, c
+; ------------------------------------------------------------------------------
+print_hex:
+    ld      a, d
+    .4      srl     a
+    call    @conv.digit_to_hex
+    ld      c, a
+    call    print_char
+
+    ld      a, d
+    and     $0F
+    call    @conv.digit_to_hex
+    ld      c, a
+    jp      print_char
+
 @isr_sio_a_rx_char_available:
     push    bc
     push    hl
@@ -246,7 +278,7 @@ print:
     push    hl
     push    af
 
-    call    @lcd.reset_cursor
+    call    @lcd.move_cursor_line_1
     ld      hl, s_special_condition
     call    @lcd.print
 
@@ -257,8 +289,9 @@ print:
     ei
     reti
 
-s_special_condition: .byte "Special!", 0
-s_char_available: .byte "Char available!", 0
+s_special_condition: .byte "Special!"Z
+
+    .include "ansi.asm"
 
     .endmodule
 

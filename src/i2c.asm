@@ -108,8 +108,9 @@ sda_release:
 ; Destroys: a
 ; ------------------------------------------------------------------------------
 scl_cycle:
+    call    scl_drive_low    ; just in case
     call    scl_release
-    .8      nop             ; wait for a bit
+    .16      nop             ; wait for a bit
 
     in      a, (PIO_DATA_A)
     and     SDA
@@ -155,23 +156,20 @@ stop:
 ; ------------------------------------------------------------------------------
 ; Writes a byte via I2C.
 ;
-; In:       a = byte to write
+; In:       c = byte to write
 ; Out:      d = 0 if received ack, 1 otherwise
-; Destroys: a, bc, de, hl
+; Destroys: a, b
 ; ------------------------------------------------------------------------------
 write:
     ld      b, 8
-    ld      c, a
 .loop:
     rlc     c
     jr      nc, .bit_low
-
     call    sda_release
     jr      .bit_low_end
 .bit_low:
     call    sda_drive_low
 .bit_low_end:
-
     call    scl_cycle
     djnz    .loop
 
@@ -187,6 +185,8 @@ write:
 ; Destroys: a, b, d
 ; ------------------------------------------------------------------------------
 read:
+    call    sda_release
+
     ld      c, 0
     ld      b, 8
 .loop:
@@ -202,8 +202,5 @@ read:
     call    sda_release
 
     ret
-
-s_no_ack:
-    .byte "No ACK", 0
 
     .endmodule
