@@ -34,6 +34,8 @@ Also found in the [kicad folder](kicad).
 
 This repo currently has only 1 software example: a (mostly finished) [Tetris implementation](zetris). It uses the NES Classic Mini controller as input, and displays its output via serial (assuming the host terminal supports ANSI escape sequences).
 
+![A screenshot of Zetris displayed in a host terminal](.github/zetris.png)
+
 ## Address mappings
 
 ### Memory
