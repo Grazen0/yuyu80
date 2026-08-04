@@ -26,7 +26,9 @@ A homebrew Z80-based computer with a handful of I/O capabilities.
 
 ## Schematic
 
-TODO: add schematic
+Also found in the [kicad folder](kicad).
+
+![Circuit schematic of the Yuyu80](.github/schematic.png)
 
 ## Software
 
